@@ -1,0 +1,168 @@
+# Variables
+# Adjust port if necessary. Base path is /api/items
+@baseUrl = http://localhost:3000/api/items
+
+# !!! IMPORTANT: After running Request #1 (Create), update @itemId below !!!
+# !!! with the actual 'id' returned in the response for subsequent requests !!!
+@itemId = 1
+
+### 1. Create a new item (POST)
+# Sends required 'name' and optional 'description' and 'price'.
+# Expects a 201 Created response with the new item, including its 'id' and 'createdAt'.
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Test Item",
+  "description": "Stored in the database via Drizzle.",
+  "price": 19.95
+}
+
+### 2. Get all items (GET)
+# Retrieves a list of all items. Each item will have id, name, description, price, createdAt.
+GET {{baseUrl}}
+
+### 3. Get a specific item by ID (GET)
+# Retrieves the item with the ID specified in @itemId.
+# Ensure @itemId is set to an existing ID from step 1 or the database.
+GET {{baseUrl}}/{{itemId}}
+
+### 4. Update an existing item (PUT)
+# Updates fields for the item with the ID specified in @itemId.
+# You can send any combination of 'name', 'description', 'price'.
+# 'id' and 'createdAt' should not be sent in the body (they are ignored by the controller anyway).
+PUT {{baseUrl}}/{{itemId}}
+Content-Type: application/json
+
+{
+  "name": "Updated SQLite Item Name",
+  "price": 22.50
+}
+
+### 5. Get the updated item by ID (GET)
+# Verify the update by fetching the item again using its ID (@itemId).
+GET {{baseUrl}}/{{itemId}}
+
+### 6. Delete an item by ID (DELETE)
+# Deletes the item with the ID specified in @itemId.
+# Expects a 204 No Content response on success.
+DELETE {{baseUrl}}/{{itemId}}
+
+### 7. Try to get the deleted item (GET) - Should fail
+# This request should result in a 404 Not Found error, confirming deletion.
+GET {{baseUrl}}/{{itemId}}
+
+### 8. Get all items again (GET)
+# Verify the item list no longer contains the deleted item.
+GET {{baseUrl}}
+
+### 9. Test Create Validation (POST) - Missing Required Name
+# This should return a 400 Bad Request error because 'name' is notNull in the schema.
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "description": "This item is missing its name",
+  "price": 5.00
+}
+
+### 10. Test Get Non-existent Item (GET)
+# Use an ID that is unlikely to exist. Should return 404 Not Found.
+GET {{baseUrl}}/99999
+
+### 11. Test Update Non-existent Item (PUT)
+# Try to update an item with an ID that doesn't exist. Should return 404 Not Found.
+PUT {{baseUrl}}/99999
+Content-Type: application/json
+
+{
+  "name": "Ghost Item",
+  "price": 0.01
+}
+
+### 12. Test Delete Non-existent Item (DELETE)
+# Try to delete an item with an ID that doesn't exist. Should return 404 Not Found.
+DELETE {{baseUrl}}/99999
+
+### ===************************** ZOD VALIDATION TESTS *************************===
+
+### 13. Test Create - Missing Name (Should Fail 400)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "description": "Missing name validation test",
+  "price": 10.00
+}
+
+### 14. Test Create - Empty Name (Should Fail 400)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "   ", # Name with only whitespace
+  "description": "Empty name validation test",
+  "price": 11.00
+}
+
+### 15. Test Create - Invalid Price Type (Should Fail 400)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Invalid Price Type",
+  "price": "twenty"
+}
+
+### 16. Test Create - Negative Price (Should Fail 400)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Negative Price",
+  "price": -5.00
+}
+
+### 17. Test Create - Extra Field (Should Fail 400 due to .strict())
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Extra Field Test",
+  "description": "This should not be allowed",
+  "price": 15.00,
+  "invalidField": true
+}
+
+
+### 18. Test Update - Empty Body (Should Fail 400 due to .refine())
+# Assuming @itemId is set to a valid ID
+PUT {{baseUrl}}/{{itemId}}
+Content-Type: application/json
+
+{}
+
+### 19. Test Update - Extra Field (Should Fail 400 due to .strict())
+# Assuming @itemId is set to a valid ID
+PUT {{baseUrl}}/{{itemId}}
+Content-Type: application/json
+
+{
+  "name": "Update Extra Field",
+  "anotherInvalidField": "abc"
+}
+
+### 20. Test Get - Invalid ID Format (Should Fail 400)
+GET {{baseUrl}}/abc
+
+### 21. Test Update - Invalid ID Format (Should Fail 400)
+PUT {{baseUrl}}/xyz
+Content-Type: application/json
+
+{
+  "name": "Update with invalid ID"
+}
+
+### 22. Test Delete - Invalid ID Format (Should Fail 400)
+DELETE {{baseUrl}}/invalid-id
+
